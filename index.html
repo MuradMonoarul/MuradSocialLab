@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Murad Social Lab — Exploring Society, History, and Human Thought.</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          paper: '#FBFBFA',
+          ink: '#1C1B19',
+          matte: '#121212',
+          rust: '#A8512E',
+          rustlight: '#C46B43',
+          line: '#E4E1DA',
+          lineDark: '#2A2A28'
+        },
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          serif: ['Lora', '"Noto Serif Bengali"', 'serif'],
+        },
+        maxWidth: {
+          'prose-lab': '720px'
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  html { scroll-behavior: smooth; }
+  body { background-color: #FBFBFA; }
+  html.dark body { background-color: #121212; }
+
+  .font-serif-lab { font-family: 'Lora', 'Noto Serif Bengali', serif; }
+
+  .prose-lab { font-family: 'Lora', 'Noto Serif Bengali', serif; line-height: 1.8; text-align: justify; }
+  .prose-lab p { margin-bottom: 1.25rem; }
+  .prose-lab h2 { font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .prose-lab h3 { font-size: 1.2rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .prose-lab blockquote {
+    border-left: 3px solid #A8512E;
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: inherit;
+    opacity: 0.85;
+  }
+  .prose-lab ul, .prose-lab ol { margin: 1rem 0 1.25rem 1.5rem; }
+  .prose-lab ul { list-style: disc; }
+  .prose-lab ol { list-style: decimal; }
+  .prose-lab .clear-prose { text-align: center; }
+  .prose-lab .article-img-container img { width: 100%; border-radius: 0.25rem; }
+  .prose-lab figcaption { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.8rem; opacity: 0.6; text-align: center; margin-top: 0.5rem; }
+
+  ::selection { background: #A8512E; color: #FBFBFA; }
+
+  .toolbar-btn { transition: background-color .15s ease; }
+  .toolbar-btn.is-active { background-color: #A8512E; color: white; }
+
+  .fade-route { animation: fadeRoute .35s ease; }
+  @keyframes fadeRoute { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+
+  .underline-grow { position: relative; }
+  .underline-grow::after {
+    content: ''; position: absolute; left: 0; bottom: -2px; height: 1px; width: 0;
+    background: currentColor; transition: width .25s ease;
+  }
+  .underline-grow:hover::after { width: 100%; }
+
+  .skeleton { background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 37%, rgba(0,0,0,0.04) 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; }
+  html.dark .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 37%, rgba(255,255,255,0.04) 63%); background-size: 400% 100%; }
+  @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+  [contenteditable]:focus { outline: none; }
+
+  .scrollbar-thin::-webkit-scrollbar { height: 4px; width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #C9C4B8; border-radius: 4px; }
+</style>
+</head>
+<body class="font-sans bg-paper dark:bg-matte text-ink dark:text-paper transition-colors duration-300 min-h-screen flex flex-col">
+
+<div id="toast-root" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
+
+<header class="sticky top-0 z-50 backdrop-blur bg-paper/90 dark:bg-matte/90 border-b border-line dark:border-lineDark">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between gap-4">
+    <a href="#" onclick="navigate('home');return false;" class="flex items-center gap-2.5 shrink-0">
+      <img src="https://i.ibb.co.com/Fk4JD9yd/Profile.jpg" alt="Murad Social Lab" class="w-8 h-8 rounded-md object-cover" />
+      <span class="font-semibold tracking-tight text-[1.05rem]">Murad Social Lab</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-7 text-[0.92rem]">
+      <a href="#" onclick="navigate('home');return false;" class="underline-grow">Home</a>
+      <a href="#" onclick="navigate('articles');return false;" class="underline-grow">Articles</a>
+      <div class="relative group">
+        <button class="underline-grow flex items-center gap-1">Topics
+          <svg class="w-3 h-3 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="topic-dropdown" class="absolute left-1/2 -translate-x-1/2 top-full pt-3 hidden group-hover:block">
+          <div class="bg-paper dark:bg-matte border border-line dark:border-lineDark rounded-lg shadow-lg py-2 min-w-[180px] max-h-72 overflow-y-auto scrollbar-thin">
+            <div id="topic-list-nav" class="flex flex-col"></div>
+          </div>
+        </div>
+      </div>
+      <div class="relative group">
+        <button class="underline-grow flex items-center gap-1">People
+          <svg class="w-3 h-3 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="absolute left-1/2 -translate-x-1/2 top-full pt-3 hidden group-hover:block">
+          <div class="bg-paper dark:bg-matte border border-line dark:border-lineDark rounded-lg shadow-lg py-2 min-w-[180px]">
+            <a href="#" onclick="navigate('people','PhD');return false;" class="block px-4 py-2 text-sm hover:bg-line/40 dark:hover:bg-lineDark/40 transition-colors">PhD</a>
+            <a href="#" onclick="navigate('people','MPhil');return false;" class="block px-4 py-2 text-sm hover:bg-line/40 dark:hover:bg-lineDark/40 transition-colors">MPhil</a>
+            <a href="#" onclick="navigate('people','Graduate');return false;" class="block px-4 py-2 text-sm hover:bg-line/40 dark:hover:bg-lineDark/40 transition-colors">Graduate</a>
+            <a href="#" onclick="navigate('people','Undergraduate');return false;" class="block px-4 py-2 text-sm hover:bg-line/40 dark:hover:bg-lineDark/40 transition-colors">Undergraduate</a>
+          </div>
+        </div>
+      </div>
+      <a href="#" onclick="navigate('about');return false;" class="underline-grow">Lab Bio</a>
+      <a href="admin.html" target="_blank" class="text-[0.82rem] font-semibold border border-line dark:border-lineDark rounded-full px-3.5 py-1.5 hover:border-rust hover:text-rust transition-colors">Admin</a>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <div class="hidden lg:block relative">
+        <input id="nav-search" type="text" placeholder="Search the lab…" oninput="onSearchInput(this.value)"
+          class="w-52 text-sm bg-transparent border border-line dark:border-lineDark rounded-full pl-9 pr-3 py-1.5 focus:outline-none focus:border-rust transition-colors" />
+        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
+      <button onclick="toggleDark()" class="w-9 h-9 flex items-center justify-center rounded-full border border-line dark:border-lineDark hover:border-rust transition-colors" title="Toggle theme">
+        <svg id="theme-icon-sun" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <svg id="theme-icon-moon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden w-9 h-9 flex items-center justify-center">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="hidden md:hidden border-t border-line dark:border-lineDark px-5 py-4 flex flex-col gap-3 text-sm">
+    <a href="#" onclick="navigate('home');return false;">Home</a>
+    <a href="#" onclick="navigate('articles');return false;">Articles</a>
+    <a href="#" onclick="navigate('about');return false;">Lab Bio</a>
+    <a href="admin.html" target="_blank" class="font-semibold text-rust">Admin</a>
+
+    <div class="flex flex-col gap-2 pt-2 border-t border-line dark:border-lineDark">
+      <span class="text-xs uppercase tracking-widest opacity-50">Topics</span>
+      <div id="topic-list-mobile" class="flex flex-col gap-2 pl-3 border-l border-line dark:border-lineDark"></div>
+    </div>
+
+    <div class="flex flex-col gap-2 pt-2 border-t border-line dark:border-lineDark">
+      <span class="text-xs uppercase tracking-widest opacity-50">People</span>
+      <div class="flex flex-col gap-2 pl-3 border-l border-line dark:border-lineDark">
+        <a href="#" onclick="navigate('people','PhD');return false;" class="opacity-80">PhD</a>
+        <a href="#" onclick="navigate('people','MPhil');return false;" class="opacity-80">MPhil</a>
+        <a href="#" onclick="navigate('people','Graduate');return false;" class="opacity-80">Graduate</a>
+        <a href="#" onclick="navigate('people','Undergraduate');return false;" class="opacity-80">Undergraduate</a>
+      </div>
+    </div>
+
+    <input type="text" placeholder="Search the lab…" oninput="onSearchInput(this.value)" class="text-sm bg-transparent border border-line dark:border-lineDark rounded-full px-3 py-1.5 focus:outline-none focus:border-rust" />
+  </div>
+</header>
+
+<main id="app" class="flex-1"></main>
+
+<footer class="border-t border-line dark:border-lineDark mt-16">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+    <div>
+      <div class="flex items-center gap-2.5 mb-3">
+        <img src="https://i.ibb.co.com/Fk4JD9yd/Profile.jpg" class="w-7 h-7 rounded-md object-cover" />
+        <span class="font-semibold">Murad Social Lab</span>
+      </div>
+      <p class="text-sm opacity-70 max-w-xs">A space for deep writing and research across sociology, history, philosophy, and human thought.</p>
+    </div>
+    <div class="text-sm">
+      <h4 class="font-semibold mb-3 text-xs tracking-widest uppercase opacity-60">Contact</h4>
+      <p class="opacity-80 mb-1">monoarulmurad@gmail.com</p>
+      <p class="opacity-80 mb-1">+8801751120444 (Office)</p>
+      <p class="opacity-80">+8801773350146 (Mobile)</p>
+    </div>
+    <div class="text-sm">
+      <h4 class="font-semibold mb-3 text-xs tracking-widest uppercase opacity-60">Connect</h4>
+      <div class="flex flex-col gap-2">
+        <a href="https://www.facebook.com/monoarulislammurad" target="_blank" class="flex items-center gap-2 opacity-80 hover:opacity-100 hover:text-rust transition">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06C2 17.06 5.66 21.2 10.44 22v-7.03H7.9v-2.91h2.54V9.84c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.91h-2.33V22C18.34 21.2 22 17.06 22 12.06z"/></svg>
+          Facebook
+        </a>
+        <a href="https://www.linkedin.com/in/monoarulmurad/" target="_blank" class="flex items-center gap-2 opacity-80 hover:opacity-100 hover:text-rust transition">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+          LinkedIn
+        </a>
+        <a href="https://wa.me/8801751120444" target="_blank" class="flex items-center gap-2 opacity-80 hover:opacity-100 hover:text-rust transition">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.85.5 3.58 1.36 5.07L2 22l5.18-1.45a9.85 9.85 0 0 0 4.86 1.27h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 18.06h-.01a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.1.87.83-3.02-.2-.31a8.2 8.2 0 0 1-1.26-4.37c0-4.53 3.69-8.22 8.23-8.22a8.18 8.18 0 0 1 8.21 8.22c0 4.53-3.69 8.15-8.22 8.15zm4.52-6.16c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.13-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.04-.38-1.99-1.22-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.86.84-.86 2.05s.88 2.38 1 2.54c.12.17 1.74 2.65 4.21 3.72.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.28z"/></svg>
+          WhatsApp
+        </a>
+      </div>
+    </div>
+    <div class="text-sm">
+      <h4 class="font-semibold mb-3 text-xs tracking-widest uppercase opacity-60">Resources</h4>
+      <p class="opacity-70 mb-4 text-xs leading-relaxed">Lecture notes, reading lists, and course materials from Jagannath University.</p>
+      <a href="#Home" target="_blank"
+        class="inline-flex items-center gap-2 bg-ink text-paper dark:bg-paper dark:text-ink rounded-lg px-4 py-2.5 text-xs font-semibold hover:bg-rust dark:hover:bg-rust dark:hover:text-white transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9.5L12.5 2zM12 3.5V9h5.5L12 3.5zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16zm0-6h3v1.5H8V10z"/></svg>
+        Class Notes
+      </a>
+    </div>
+  </div>
+  <div class="border-t border-line dark:border-lineDark py-5 text-center text-xs opacity-50">© 2026 Murad Social Lab. All rights reserved.</div>
+</footer>
+
+<script>
+/* ============================ SUPABASE CONFIG ============================ */
+const SUPABASE_URL = 'https://boyzbgriwoosdhzfumvh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJveXpiZ3Jpd29vc2RoemZ1bXZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzUzMzEsImV4cCI6MjA5OTAxMTMzMX0.DthaW-MKXJRz0K-EsUT0lNXA49jKHDnD1Be-V-Yn9IU';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const PEOPLE_LEVELS = ['PhD', 'MPhil', 'Graduate', 'Undergraduate'];
+
+/* ============================ STATE ============================ */
+const state = {
+  route: 'home',
+  routeParam: null,
+  articles: [],
+  categories: [],
+  people: [],
+  loadingArticles: true,
+  loadingCategories: true,
+  loadingPeople: true,
+  searchQuery: '',
+};
+
+/* ============================ UTILS ============================ */
+function escapeHtml(str){
+  if(str === undefined || str === null) return '';
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function nl2br(str){
+  return escapeHtml(str).replace(/\n/g, '<br>');
+}
+function slugify(str){
+  return String(str || '').toLowerCase().trim().replace(/[^\w\s-]/g,'').replace(/\s+/g,'-').slice(0,60);
+}
+function formatDate(d){
+  const date = new Date(d);
+  if(isNaN(date.getTime())) return d || '';
+  return date.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+}
+function isPinned(post){
+  return post.pinned === 'TRUE' || post.pinned === true || post.pinned === 'true';
+}
+function sortedArticles(list){
+  return [...list].sort((a,b) => new Date(b.date) - new Date(a.date));
+}
+function toast(msg, type='info'){
+  const root = document.getElementById('toast-root');
+  const el = document.createElement('div');
+  const colors = { info: 'bg-ink text-paper dark:bg-paper dark:text-ink', error: 'bg-rust text-white', success: 'bg-emerald-700 text-white' };
+  el.className = `px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium ${colors[type]||colors.info} fade-route`;
+  el.textContent = msg;
+  root.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 300); }, 2600);
+}
+
+/* ============================ THEME ============================ */
+function initTheme(){
+  const saved = localStorage.getItem('msl_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = saved ? saved === 'dark' : prefersDark;
+  document.documentElement.classList.toggle('dark', dark);
+  updateThemeIcon(dark);
+}
+function toggleDark(){
+  const dark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('msl_theme', dark ? 'dark' : 'light');
+  updateThemeIcon(dark);
+}
+function updateThemeIcon(dark){
+  document.getElementById('theme-icon-sun').classList.toggle('hidden', !dark);
+  document.getElementById('theme-icon-moon').classList.toggle('hidden', dark);
+}
+
+/* ============================ ROUTER ============================ */
+let isInternalHashChange = false;
+
+function routeToHash(route, param){
+  switch(route){
+    case 'home': return '';
+    case 'articles': return 'articles';
+    case 'about': return 'about';
+    case 'topic': return 'topic:' + encodeURIComponent(param || '');
+    case 'people': return 'people:' + encodeURIComponent(param || '');
+    case 'person': return 'person:' + encodeURIComponent(param || '');
+    case 'post': return 'post:' + encodeURIComponent(param || '');
+    case 'search': return 'search:' + encodeURIComponent(param || '');
+    default: return '';
+  }
+}
+
+function navigate(route, param=null){
+  state.route = route;
+  state.routeParam = param;
+  document.getElementById('mobile-menu').classList.add('hidden');
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  const hash = routeToHash(route, param);
+  const newHash = hash ? ('#' + hash) : '#';
+  if(window.location.hash !== newHash){
+    isInternalHashChange = true;
+    window.location.hash = newHash;
+  }
+  render();
+}
+
+function parseInitialHash(){
+  const raw = decodeURIComponent((window.location.hash || '').replace(/^#/, ''));
+  if(!raw){ state.route = 'home'; state.routeParam = null; return; }
+  if(raw.startsWith('topic:')){ state.route = 'topic'; state.routeParam = raw.slice(6); }
+  else if(raw.startsWith('people:')){ state.route = 'people'; state.routeParam = raw.slice(7); }
+  else if(raw.startsWith('person:')){ state.route = 'person'; state.routeParam = raw.slice(7); }
+  else if(raw.startsWith('post:')){ state.route = 'post'; state.routeParam = raw.slice(5); }
+  else if(raw.startsWith('search:')){ state.route = 'search'; state.routeParam = raw.slice(7); }
+  else if(raw === 'articles'){ state.route = 'articles'; state.routeParam = null; }
+  else if(raw === 'about'){ state.route = 'about'; state.routeParam = null; }
+  else { state.route = 'home'; state.routeParam = null; }
+}
+
+function onHashChange(){
+  if(isInternalHashChange){ isInternalHashChange = false; return; }
+  parseInitialHash();
+  render();
+}
+
+/* ============================ DATA FETCHING (SUPABASE) ============================ */
+async function loadArticles(){
+  state.loadingArticles = true;
+  try{
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('status', 'published')
+      .order('date', { ascending: false });
+    
+    if(error) throw error;
+    state.articles = Array.isArray(data) ? data : [];
+  }catch(e){
+    console.error('Failed to load articles', e);
+    state.articles = [];
+    toast('Could not load articles from the database.', 'error');
+  }
+  state.loadingArticles = false;
+  render();
+}
+
+async function loadCategories(){
+  state.loadingCategories = true;
+  try{
+    const { data, error } = await supabase
+      .from('categories')
+      .select('name')
+      .order('name', { ascending: true });
+    
+    if(error) throw error;
+    state.categories = Array.isArray(data) ? data.map(c => c.name).filter(Boolean) : [];
+  }catch(e){
+    console.error('Failed to load categories', e);
+    state.categories = [];
+  }
+  state.loadingCategories = false;
+  renderTopicNav();
+}
+
+async function loadPeople(){
+  state.loadingPeople = true;
+  try{
+    const { data, error } = await supabase
+      .from('people')
+      .select('*')
+      .order('role', { ascending: true });
+    
+    if(error) throw error;
+    state.people = Array.isArray(data) ? data : [];
+  }catch(e){
+    console.error('Failed to load people', e);
+    state.people = [];
+    toast('Could not load the people directory.', 'error');
+  }
+  state.loadingPeople = false;
+  render();
+}
+
+/* ============================ SEARCH ============================ */
+let searchTimeout;
+function onSearchInput(val){
+  state.searchQuery = val;
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(()=>{
+    if(val.trim()){
+      navigate('search', val.trim());
+    } else if(state.route === 'search'){
+      navigate('home');
+    }
+  }, 350);
+}
+
+/* ============================ ARTICLE CARD ============================ */
+function articleCard(post, featured=false){
+  const cat = escapeHtml(post.category || '');
+  const title = escapeHtml(post.title || 'Untitled');
+  const excerpt = escapeHtml(post.excerpt || (post.content ? post.content.replace(/<[^>]+>/g,'').slice(0,160)+'…' : ''));
+  const img = post.image ? `<div class="aspect-[16/9] overflow-hidden rounded-lg mb-4 bg-line/30 dark:bg-lineDark/30"><img src="${escapeHtml(post.image)}" loading="lazy" class="w-full h-full object-cover" /></div>` : '';
+  if(featured){
+    return `
+    <article onclick="navigate('post','${escapeHtml(post.slug||post.id)}')" class="cursor-pointer group">
+      <div class="aspect-[21/9] overflow-hidden rounded-xl mb-6 bg-line/30 dark:bg-lineDark/30">
+        ${post.image ? `<img src="${escapeHtml(post.image)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />` : ''}
+      </div>
+      <div class="flex items-center gap-3 text-xs uppercase tracking-widest opacity-60 mb-3">
+        <span class="text-rust font-semibold">Featured</span><span>·</span><span>${cat}</span><span>·</span><span>${formatDate(post.date)}</span>
+      </div>
+      <h2 class="font-serif-lab text-2xl sm:text-3xl font-semibold leading-snug mb-3 group-hover:text-rust transition-colors">${title}</h2>
+      <p class="opacity-70 leading-relaxed max-w-2xl">${excerpt}</p>
+    </article>`;
+  }
+  return `
+  <article onclick="navigate('post','${escapeHtml(post.slug||post.id)}')" class="cursor-pointer group border-b border-line dark:border-lineDark pb-7">
+    ${img}
+    <div class="flex items-center gap-2 text-xs uppercase tracking-widest opacity-60 mb-2">
+      <span>${cat}</span><span>·</span><span>${formatDate(post.date)}</span>
+    </div>
+    <h3 class="font-serif-lab text-xl font-semibold leading-snug mb-2 group-hover:text-rust transition-colors">${title}</h3>
+    <p class="text-sm opacity-70 leading-relaxed">${excerpt}</p>
+  </article>`;
+}
+
+function skeletonCards(n){
+  return Array.from({length:n}).map(()=>`
+    <div class="border-b border-line dark:border-lineDark pb-7">
+      <div class="skeleton aspect-[16/9] rounded-lg mb-4"></div>
+      <div class="skeleton h-3 w-24 rounded mb-3"></div>
+      <div class="skeleton h-5 w-3/4 rounded mb-2"></div>
+      <div class="skeleton h-3 w-full rounded"></div>
+    </div>
+  `).join('');
+}
+
+/* ============================ PEOPLE CARD ============================ */
+function personIdentifier(person){
+  return String(person.id || person.slug || slugify(person.name) || '').trim();
+}
+
+function personCard(person){
+  const name = escapeHtml(person.name || 'Unnamed');
+  const designation = escapeHtml(person.role || '');
+  const id = personIdentifier(person);
+  const img = person.avatar
+    ? `<img src="${escapeHtml(person.avatar)}" loading="lazy" class="w-24 h-24 rounded-full object-cover mx-auto mb-5 border border-line dark:border-lineDark" />`
+    : `<div class="w-24 h-24 rounded-full bg-line/40 dark:bg-lineDark/40 mx-auto mb-5"></div>`;
+
+  return `
+  <div onclick="navigate('person','${escapeHtml(id)}')" class="border border-line dark:border-lineDark rounded-xl p-6 text-center hover:border-rust transition-colors cursor-pointer group">
+    ${img}
+    <h3 class="font-sans font-semibold text-lg mb-1">${name}</h3>
+    ${designation ? `<p class="font-sans text-sm text-rust font-medium mb-5">${designation}</p>` : ''}
+    <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-rust uppercase tracking-widest underline-grow">
+      Explore Profile
+      <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </span>
+  </div>`;
+}
+
+function skeletonPeopleCards(n){
+  return Array.from({length:n}).map(()=>`
+    <div class="border border-line dark:border-lineDark rounded-xl p-6 text-center">
+      <div class="skeleton w-24 h-24 rounded-full mx-auto mb-5"></div>
+      <div class="skeleton h-4 w-2/3 mx-auto rounded mb-2"></div>
+      <div class="skeleton h-3 w-1/2 mx-auto rounded mb-5"></div>
+      <div class="skeleton h-3 w-full rounded mb-2"></div>
+      <div class="skeleton h-3 w-full rounded"></div>
+    </div>
+  `).join('');
+}
+
+/* ============================ VIEWS ============================ */
+function viewHome(){
+  const list = sortedArticles(state.articles);
+  const pinned = list.find(isPinned);
+  const rest = list.filter(p => p !== pinned).slice(0, 6);
+
+  return `
+  <div class="fade-route">
+    <section class="max-w-6xl mx-auto px-5 sm:px-8 pt-14 pb-10 text-center border-b border-line dark:border-lineDark">
+      <p class="text-xs uppercase tracking-[0.25em] text-rust font-semibold mb-4">A Notebook on Society & Thought</p>
+      <h1 class="font-serif-lab text-3xl sm:text-5xl font-semibold leading-tight max-w-3xl mx-auto mb-5">
+        Exploring Society, History, and the Architecture of Human Thought
+      </h1>
+      <p class="opacity-70 max-w-xl mx-auto mb-8">Essays and field notes on sociology, political ideas, and the institutions that shape how we live together.</p>
+      <div class="max-w-md mx-auto relative">
+        <input type="text" placeholder="Search concepts, essays, ideas…" oninput="onSearchInput(this.value)"
+          class="w-full text-sm bg-transparent border border-line dark:border-lineDark rounded-full pl-11 pr-4 py-3 focus:outline-none focus:border-rust transition-colors" />
+        <svg class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
+    </section>
+
+    <section class="max-w-6xl mx-auto px-5 sm:px-8 py-12">
+      ${state.loadingArticles ? `<div class="skeleton aspect-[21/9] rounded-xl"></div>` :
+        pinned ? articleCard(pinned, true) :
+        `<p class="opacity-50 text-center py-10">No featured perspective set yet.</p>`}
+    </section>
+
+    <section class="max-w-6xl mx-auto px-5 sm:px-8 pb-20">
+      <div class="flex items-center justify-between mb-8">
+        <h2 class="text-xs uppercase tracking-widest opacity-60 font-semibold">Latest Notebook Entries</h2>
+        <a href="#" onclick="navigate('articles');return false;" class="text-sm underline-grow">View all →</a>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
+        ${state.loadingArticles ? skeletonCards(6) : (rest.length ? rest.map(p=>articleCard(p)).join('') : `<p class="opacity-50 col-span-full text-center py-10">No entries published yet.</p>`)}
+      </div>
+    </section>
+  </div>`;
+}
+
+function viewArticles(){
+  const list = sortedArticles(state.articles);
+  return `
+  <div class="fade-route max-w-5xl mx-auto px-5 sm:px-8 py-14">
+    <p class="text-xs uppercase tracking-[0.25em] text-rust font-semibold mb-3">Complete Archive</p>
+    <h1 class="font-serif-lab text-3xl sm:text-4xl font-semibold mb-10">Articles</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-12">
+      ${state.loadingArticles ? skeletonCards(6) : (list.length ? list.map(p=>articleCard(p)).join('') : `<p class="opacity-50 col-span-full text-center py-16">No essays published yet.</p>`)}
+    </div>
+  </div>`;
+}
+
+function viewTopic(topic){
+  const list = sortedArticles(state.articles).filter(p => (p.category||'').toLowerCase() === topic.toLowerCase());
+  return `
+  <div class="fade-route max-w-5xl mx-auto px-5 sm:px-8 py-14">
+    <p class="text-xs uppercase tracking-[0.25em] text-rust font-semibold mb-3">Topic Archive</p>
+    <h1 class="font-serif-lab text-3xl sm:text-4xl font-semibold mb-10">${escapeHtml(topic)}</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-12">
+      ${state.loadingArticles ? skeletonCards(4) : (list.length ? list.map(p=>articleCard(p)).join('') : `<p class="opacity-50 col-span-full text-center py-16">No essays in this topic yet.</p>`)}
+    </div>
+  </div>`;
+}
+
+function viewSearch(query){
+  const q = query.toLowerCase();
+  const list = sortedArticles(state.articles).filter(p =>
+    (p.title||'').toLowerCase().includes(q) ||
+    (p.excerpt||'').toLowerCase().includes(q) ||
+    (p.category||'').toLowerCase().includes(q) ||
+    (p.content||'').toLowerCase().includes(q)
+  );
+  return `
+  <div class="fade-route max-w-5xl mx-auto px-5 sm:px-8 py-14">
+    <p class="text-xs uppercase tracking-[0.25em] text-rust font-semibold mb-3">Search Results</p>
+    <h1 class="font-serif-lab text-2xl sm:text-3xl font-semibold mb-10">"${escapeHtml(query)}"</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-12">
+      ${list.length ? list.map(p=>articleCard(p)).join('') : `<p class="opacity-50 col-span-full text-center py-16">No matching entries found.</p>`}
+    </div>
+  </div>`;
+}
+
+function viewPost(slug){
+  const post = state.articles.find(p => (p.slug||p.id) === slug);
+  if(!post){
+    return `<div class="fade-route max-w-prose-lab mx-auto px-5 sm:px-8 py-24 text-center">
+      <p class="opacity-60">This entry could not be found.</p>
+      <a href="#" onclick="navigate('articles');return false;" class="text-rust underline-grow mt-4 inline-block">Back to archive</a>
+    </div>`;
+  }
+  return `
+  <article class="fade-route max-w-prose-lab mx-auto px-5 sm:px-8 py-14">
+    <div class="flex items-center gap-2 text-xs uppercase tracking-widest opacity-60 mb-4">
+      <a href="#" onclick="navigate('topic','${escapeHtml(post.category||'')}');return false;" class="text-rust font-semibold">${escapeHtml(post.category||'')}</a>
+      <span>·</span><span>${formatDate(post.date)}</span>
+    </div>
+    <h1 class="font-serif-lab text-3xl sm:text-4xl font-semibold leading-tight mb-8">${escapeHtml(post.title||'')}</h1>
+    ${post.image ? `<div class="aspect-[16/9] overflow-hidden rounded-xl mb-10 bg-line/30 dark:bg-lineDark/30"><img src="${escapeHtml(post.image)}" class="w-full h-full object-cover" /></div>` : ''}
+    <div class="prose-lab text-[1.05rem]">${post.content || ''}</div>
+    <div class="mt-14 pt-8 border-t border-line dark:border-lineDark">
+      <a href="#" onclick="navigate('articles');return false;" class="text-sm underline-grow">← Back to all articles</a>
+    </div>
+  </article>`;
+}
+
+function viewAbout(){
+  return `
+  <div class="fade-route max-w-4xl mx-auto px-5 sm:px-8 py-16">
+    <p class="text-xs uppercase tracking-[0.25em] text-rust font-semibold mb-3 text-center">The Lab Bio</p>
+    <h1 class="font-serif-lab text-3xl sm:text-4xl font-semibold mb-12 text-center">About Murad Social Lab</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-[280px,1fr] gap-10 items-start">
+      <div class="border border-line dark:border-lineDark rounded-xl p-6 text-center">
+        <img src="https://iili.io/CcmmQ9a.jpg" class="w-65 h-65 rounded-full object-cover mx-auto mb-5 border border-line dark:border-lineDark" />
+        <h2 class="font-semibold text-lg mb-1">Monoarul Islam Murad</h2>
+        <p class="text-sm opacity-70 mb-5">Sociology student at Jagannath University, Dhaka, and an emerging researcher.</p>
+        <div class="text-sm opacity-80 space-y-1 mb-6 text-left">
+          <p><span class="opacity-50">Email:</span> muradmonoarul@gmail.com</p> 
+          <p><span class="opacity-50">Location:</span> Dhaka, Bangladesh</p>
+        </div>
+        <a href="https://drive.google.com/file/d/1SiApmCeFYtpn5llMo-gV0PGgZil4OZkq/view?usp=sharing" target="_blank"
+          class="block w-full text-center bg-ink text-paper dark:bg-paper dark:text-ink rounded-lg py-2.5 text-sm font-semibold hover:bg-rust dark:hover:bg-rust dark:hover:text-white transition-colors">
+          Download CV
+        </a>
+      </div>
+      <div class="prose-lab text-[1.02rem] pt-2">
+        <p><i>Murad Social Lab</i> is founded and led by <b><u>Monoarul Islam Murad</u></b>, a sociology student at Jagannath University, Dhaka and an emerging researcher and writer working at the intersection of society, ideology, and intellectual history. His academic interests center on political thought, religious and civilizational ideas, and the structures shaping contemporary global economics, approached through an interdisciplinary lens that draws on sociology, philosophy, and psychology.</p>
+        <p>Alongside this academic work, Murad writes poetry, essays, and short fiction engaging with contemporary social and intellectual questions, and regularly takes part in seminars, roundtables, and public discourse across Bangladesh's intellectual circles.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewPeople(level){
+  const lvl = level || PEOPLE_LEVELS[0];
+  const list = state.people.filter(p => (p.role||'').trim().toLowerCase() === lvl.toLowerCase());
+  return `
+  <div class="fade-route max-w-6xl mx-auto px-5 sm:px-8 py-14">
+    <p class="text-xs uppercase tracking-[0.25em] text-rust font-semibold mb-3">People Directory</p>
+    <h1 class="font-serif-lab text-3xl sm:text-4xl font-semibold mb-10">${escapeHtml(lvl)} Researchers</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      ${state.loadingPeople ? skeletonPeopleCards(6) : (list.length ? list.map(p=>personCard(p)).join('') : `<p class="opacity-50 col-span-full text-center py-16">No profiles listed under ${escapeHtml(lvl)} yet.</p>`)}
+    </div>
+  </div>`;
+}
+
+function viewPersonProfile(id){
+  const person = state.people.find(p => personIdentifier(p) === id);
+  const fallbackLevel = PEOPLE_LEVELS[0];
+
+  if(state.loadingPeople){
+    return `
+    <div class="fade-route max-w-prose-lab mx-auto px-5 sm:px-8 py-14">
+      <div class="skeleton h-4 w-32 rounded mb-8"></div>
+      <div class="border border-line dark:border-lineDark rounded-xl p-8 text-center">
+        <div class="skeleton w-40 h-40 rounded-full mx-auto mb-6"></div>
+        <div class="skeleton h-5 w-1/2 mx-auto rounded mb-2"></div>
+        <div class="skeleton h-3 w-1/3 mx-auto rounded"></div>
+      </div>
+    </div>`;
+  }
+
+  if(!person){
+    return `
+    <div class="fade-route max-w-prose-lab mx-auto px-5 sm:px-8 py-24 text-center">
+      <p class="opacity-60">This profile could not be found.</p>
+      <a href="#" onclick="navigate('people','${escapeHtml(fallbackLevel)}');return false;" class="text-rust underline-grow mt-4 inline-block">Back to directory</a>
+    </div>`;
+  }
+
+  const level = person.role || fallbackLevel;
+  const name = escapeHtml(person.name || 'Unnamed');
+  const designation = escapeHtml(person.role || '');
+  const img = person.avatar
+    ? `<img src="${escapeHtml(person.avatar)}" class="w-40 h-40 rounded-full object-cover mx-auto mb-6 border border-line dark:border-lineDark" />`
+    : `<div class="w-40 h-40 rounded-full bg-line/40 dark:bg-lineDark/40 mx-auto mb-6"></div>`;
+  const research = person.research_details
+    ? `<div class="prose-lab text-sm opacity-80 mb-3"><h3 class="!mt-0">Research</h3><p>${nl2br(person.research_details)}</p></div>` : '';
+  const bio = person.bio
+    ? `<div class="prose-lab text-sm opacity-70 mb-3"><h3>Bio</h3><p>${nl2br(person.bio)}</p></div>` : '';
+  const pubs = person.publications
+    ? `<div class="border-t border-line dark:border-lineDark pt-4 mt-4">
+         <p class="text-xs uppercase tracking-widest opacity-50 mb-1.5">Publications</p>
+         <p class="text-xs italic opacity-70 leading-relaxed">${nl2br(person.publications)}</p>
+       </div>` : '';
+
+  return `
+  <div class="fade-route max-w-prose-lab mx-auto px-5 sm:px-8 py-14">
+    <a href="#" onclick="navigate('people','${escapeHtml(level)}');return false;" class="text-sm underline-grow inline-block mb-8">← Back to directory</a>
+    <div class="border border-line dark:border-lineDark rounded-xl p-8 text-center">
+      ${img}
+      <h1 class="font-serif-lab text-2xl sm:text-3xl font-semibold mb-1">${name}</h1>
+      ${designation ? `<p class="font-sans text-sm text-rust font-medium mb-6">${designation}</p>` : ''}
+      <div class="text-left">
+        ${research}
+        ${bio}
+        ${pubs}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================ RENDER ============================ */
+function render(){
+  const app = document.getElementById('app');
+  switch(state.route){
+    case 'home': app.innerHTML = viewHome(); break;
+    case 'articles': app.innerHTML = viewArticles(); break;
+    case 'topic': app.innerHTML = viewTopic(state.routeParam); break;
+    case 'search': app.innerHTML = viewSearch(state.routeParam); break;
+    case 'post': app.innerHTML = viewPost(state.routeParam); break;
+    case 'about': app.innerHTML = viewAbout(); break;
+    case 'people': app.innerHTML = viewPeople(state.routeParam); break;
+    case 'person': app.innerHTML = viewPersonProfile(state.routeParam); break;
+    default: app.innerHTML = viewHome();
+  }
+  renderTopicNav();
+}
+
+/* ============================ TOPIC NAV ============================ */
+function renderTopicNav(){
+  const desktop = document.getElementById('topic-list-nav');
+  const mobile = document.getElementById('topic-list-mobile');
+  if(state.loadingCategories){
+    desktop.innerHTML = `<div class="px-4 py-2 text-sm opacity-50">Loading…</div>`;
+    mobile.innerHTML = '';
+    return;
+  }
+  if(!state.categories.length){
+    desktop.innerHTML = `<div class="px-4 py-2 text-sm opacity-50">No topics yet</div>`;
+    mobile.innerHTML = '';
+    return;
+  }
+  desktop.innerHTML = state.categories.map(c => `
+    <a href="#" onclick="navigate('topic', '${escapeHtml(c)}');return false;" class="px-4 py-2 text-sm hover:bg-line/40 dark:hover:bg-lineDark/40 transition-colors">${escapeHtml(c)}</a>
+  `).join('');
+  mobile.innerHTML = state.categories.map(c => `
+    <a href="#" onclick="navigate('topic', '${escapeHtml(c)}');return false;" class="text-sm opacity-80">${escapeHtml(c)}</a>
+  `).join('');
+}
+
+/* ============================ INIT ============================ */
+async function init(){
+  initTheme();
+  parseInitialHash();
+  render();
+  window.addEventListener('hashchange', onHashChange);
+  await Promise.all([loadArticles(), loadCategories(), loadPeople()]);
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
